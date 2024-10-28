@@ -1,0 +1,5 @@
+[extensions]
+    allowed = ['.png', '.jpg', '.tiff']
+    
+[files]
+    ignored = ['ignore_me.png']
