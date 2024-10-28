@@ -1,8 +1,7 @@
-import pytest
 from pathlib import Path
 from app.get_files import (
     find_files_with_extensions,
-)  # Replace 'app.get_files' with the module name
+)
 
 
 def test_find_files_with_matching_extensions(mocker):
