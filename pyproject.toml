@@ -8,6 +8,10 @@ dependencies = []
 
 [tool.uv]
 dev-dependencies = [
+    "pytest-cov>=5.0.0",
     "pytest-mock>=3.14.0",
     "pytest>=8.3.3",
 ]
+
+[tool.pytest.ini_options]
+addopts = "--cov=app --cov-report=term-missing"

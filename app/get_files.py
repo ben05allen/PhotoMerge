@@ -11,6 +11,6 @@ def find_files_with_extensions(folder_path, extensions, is_recursive: bool = Tru
                 yield file.resolve()
     else:
         for file in Path(folder_path).iterdir():
-            if file.is_file() and file.suffix.lower() in extensions:
+            if file.suffix.lower() in extensions:
                 yield file.resolve()
     

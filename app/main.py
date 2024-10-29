@@ -80,16 +80,22 @@ def main(args: argparse.ArgumentParser):
 
             if file.name not in filenames:
                 filenames.add(file.name)
-                copy_file(file, out_dir)
-                LOGGER.info(f"Saved: {file.name} in {out_dir}")
+                suceeded = copy_file(file, out_dir)
+                if not suceeded:
+                    LOGGER.error(f"Failed to copy file: {file.name}")
+                else:
+                    LOGGER.info(f"Saved: {file.name} in {out_dir}")
                 continue
 
             idx = 1
             while (out_dir / (new_name := f"{file.stem}_{idx}{file.suffix}")).exists():
                 idx += 1
             filenames.add(new_name)
-            copy_file(file, out_dir / new_name)
-            LOGGER.info(f"Saved: {file.name} in {out_dir} as {new_name}")
+            suceeded = copy_file(file, out_dir / new_name)
+            if not suceeded:
+                LOGGER.error(f"Failed to copy file: {file.name}")
+            else:
+                LOGGER.info(f"Saved: {file.name} in {out_dir} as {new_name}")
 
 
 if __name__ == "__main__":
