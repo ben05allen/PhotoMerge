@@ -2,14 +2,22 @@ import argparse
 from pathlib import Path
 import tomllib
 
-from .copy_files import copy_file
-from .get_files import find_files_with_extensions
-from .hash_files import calculate_hash
-from .logger import setup_logging
+# hack to get around pytest imports
+try:
+    from app.copy_files import copy_file
+    from app.get_files import find_files_with_extensions
+    from app.hash_files import calculate_hash
+    from app.logger import setup_logging, add_console_handler
+except ImportError:
+    from copy_files import copy_file
+    from get_files import find_files_with_extensions
+    from hash_files import calculate_hash
+    from logger import setup_logging, add_console_handler
 
 
-LOG_FILE = Path(__file__).parent / "logs" / "app.log"
 DEFAULT_CONFIG = Path(__file__).parent / "config" / "config.toml"
+LOG_FILE = Path(__file__).parent / "logs" / "app.log"
+LOGGER = setup_logging(LOG_FILE)
 
 
 def parse_args() -> argparse.ArgumentParser:
@@ -20,11 +28,11 @@ def parse_args() -> argparse.ArgumentParser:
     parser.add_argument(
         "--source", "-s", required=True, help="Source file or directory path"
     )
-    parser.add_argument(
-        "--target", "-t", required=True, help="Target directory path"
-    )
+    parser.add_argument("--target", "-t", required=True, help="Target directory path")
     parser.add_argument("--verbose", "-v", action="store_true", help="Verbose output")
-    parser.add_argument("--non_recursive", "-n", action="store_false", help="Disable recursive search")
+    parser.add_argument(
+        "--non_recursive", "-n", action="store_false", help="Disable recursive search"
+    )
     parser.add_argument("--config", "-c", help="Configuration file path")
 
     return parser.parse_args()
@@ -58,18 +66,22 @@ def main(args: argparse.ArgumentParser):
     LOGGER.info(f"Using source directory: {data_dir}")
     out_dir = Path(args.target)
     LOGGER.info(f"Using target directory: {out_dir}")
-    
+
     # hash files, store hashes and file names in sets
     hashes = set()
     filenames = set()
 
     # check out_dir for any files
-    for file in find_files_with_extensions(out_dir, allowed_extensions, is_recursive=False):
+    for file in find_files_with_extensions(
+        out_dir, allowed_extensions, is_recursive=False
+    ):
         hashes.add(calculate_hash(file))
         filenames.add(file.name)
 
     # process source files
-    for file in find_files_with_extensions(data_dir, allowed_extensions, is_recursive=args.non_recursive):
+    for file in find_files_with_extensions(
+        data_dir, allowed_extensions, is_recursive=args.non_recursive
+    ):
         if file.name in ignored_files:
             LOGGER.info(f"Ignoring file: {file.name}")
             continue
@@ -100,6 +112,7 @@ def main(args: argparse.ArgumentParser):
 
 if __name__ == "__main__":
     args = parse_args()
-    LOGGER = setup_logging(LOG_FILE, verbose=args.verbose)
+    if args.verbose:
+        LOGGER = add_console_handler(LOGGER)
 
     main(args)

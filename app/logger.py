@@ -2,7 +2,7 @@ import logging
 import sys
 
 
-def setup_logging(log_file, verbose=False):
+def setup_logging(log_file):
     logger = logging.getLogger(__name__)
     logger.setLevel(logging.DEBUG)
 
@@ -14,10 +14,12 @@ def setup_logging(log_file, verbose=False):
         file_handler.setFormatter(file_formatter)
         logger.addHandler(file_handler)
 
-    # add stdio handler if verbose is set to true and not already instantiated
-    if verbose and not any(
-        h.__class__.__name__ == "StreamHandler" for h in logger.handlers
-    ):
+    return logger
+
+
+def add_console_handler(logger):
+    # add stdio handler if not already instantiated
+    if not any(h.__class__.__name__ == "StreamHandler" for h in logger.handlers):
         console_handler = logging.StreamHandler(sys.stdout)
         console_handler.setLevel(logging.DEBUG)
         console_formatter = logging.Formatter("%(message)s")

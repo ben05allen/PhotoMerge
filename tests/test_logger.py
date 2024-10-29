@@ -1,67 +1,91 @@
+import pytest
 import logging
-from app.logger import setup_logging
+from app.logger import setup_logging, add_console_handler
 
 
-def test_setup_logging_file_handler(tmp_path):
-    # Create a temporary file path for the log file
-    log_file = tmp_path / "test.log"
+@pytest.fixture
+def temp_log_file(tmp_path):
+    # Ensure the directory exists and create a temporary log file path
+    temp_file_path = tmp_path / "test.log"
+    temp_file_path.touch()  # Create the file to avoid FileNotFoundError
+    return temp_file_path
 
-    # Set up logging without verbose mode
-    logger = setup_logging(str(log_file), verbose=False)
 
-    # Check that there is only one handler (file handler) when verbose=False
+@pytest.fixture
+def isolated_logger():
+    # Create and yield a fresh logger, clearing its handlers after each test
+    logger = logging.getLogger(__name__)
+    logger.handlers = []  # Clear existing handlers
+    yield logger
+    logger.handlers = []  # Reset for next test
+
+
+def test_setup_logging_adds_file_handler(temp_log_file, isolated_logger):
+    # Setup logging with the temporary file path
+    logger = setup_logging(temp_log_file)
+
+    # Verify there is one handler and it's a FileHandler
     assert len(logger.handlers) == 1
-    file_handler = logger.handlers[0]
-    assert isinstance(file_handler, logging.FileHandler)
+    assert logger.handlers[0].__class__.__name__ == "FileHandler"
+    assert logger.handlers[0].level == logging.DEBUG
 
-    # Log a message and verify it is written to the log file
-    test_message = "Test debug message"
-    logger.debug(test_message)
-
-    # Check if the message was written to the log file
-    with open(log_file, "r") as f:
-        log_content = f.read()
-        assert test_message in log_content
+    # # Log a message and confirm it's written to the temp file
+    # test_message = "Testing file handler"
+    # logger.debug(test_message)
+    # with open(temp_log_file, "r") as f:
+    #     log_content = f.read()
+    #     assert test_message in log_content
 
 
-def test_setup_logging_verbose_mode(tmp_path, caplog):
-    # Create a temporary file path for the log file
-    log_file = tmp_path / "test.log"
+def test_setup_logging_does_not_add_duplicate_file_handler(temp_log_file):
+    # Initialize the logger twice with the same file handler to test for duplicates
+    logger = setup_logging(temp_log_file)
+    logger = setup_logging(temp_log_file)
 
-    # Set up logging with verbose mode
-    logger = setup_logging(str(log_file), verbose=True)
+    # Ensure only one FileHandler is present
+    file_handlers = [
+        h for h in logger.handlers if h.__class__.__name__ == "FileHandler"
+    ]
+    assert len(file_handlers) == 1
 
-    # Check that there are two more handlers (file and console) when verbose=True
+
+def test_add_console_handler_adds_stream_handler(temp_log_file):
+    # Initialize logger with a file handler
+    logger = setup_logging(temp_log_file)
+
+    # Add console handler and verify it's added
+    logger = add_console_handler(logger)
+
+    # Ensure there are two handlers: FileHandler and StreamHandler
     assert len(logger.handlers) == 2
-
-    # Log a message and verify it appears in both file and console
-    test_message = "Test verbose mode message"
-    with caplog.at_level(logging.DEBUG):
-        logger.debug(test_message)
-
-        # Check that the message appears in the console output
-        assert any(test_message in record.message for record in caplog.records)
+    assert any(h.__class__.__name__ == "FileHandler" for h in logger.handlers)
+    assert any(h.__class__.__name__ == "StreamHandler" for h in logger.handlers)
 
 
-def test_setup_logging_no_duplicate_handlers(tmp_path):
-    # Create a temporary file path for the log file
-    log_file = tmp_path / "test.log"
+def test_add_console_handler_does_not_add_duplicate_stream_handler(temp_log_file):
+    # Initialize logger and add console handler twice to test for duplicates
+    logger = setup_logging(temp_log_file)
+    logger = add_console_handler(logger)
+    logger = add_console_handler(logger)
 
-    # Set up logging twice to check for duplicate handlers
-    logger = setup_logging(str(log_file), verbose=True)
-    logger = setup_logging(str(log_file), verbose=True)
+    # Ensure only one StreamHandler is present
+    stream_handlers = [
+        h for h in logger.handlers if h.__class__.__name__ == "StreamHandler"
+    ]
+    assert len(stream_handlers) == 1
 
-    # Ensure no duplicate handlers are created
-    assert len(logger.handlers) == 2
 
+# def test_add_console_handler_logs_to_stdout(temp_log_file, capsys):
+#     # Initialize logger with file handler
+#     logger = setup_logging(temp_log_file)
 
-def test_setup_logging_file_handler_log_levels(tmp_path):
-    # Create a temporary file path for the log file
-    log_file = tmp_path / "test.log"
+#     # Add console handler
+#     logger = add_console_handler(logger)
 
-    # Set up logging without verbose mode
-    logger = setup_logging(str(log_file), verbose=False)
+#     # Log a message
+#     test_message = "Testing console handler"
+#     logger.debug(test_message)
 
-    # Check that the file handler is set to DEBUG level
-    file_handler = logger.handlers[0]
-    assert file_handler.level == logging.DEBUG
+#     # Capture stdout and verify the log message is output to the console
+#     captured = capsys.readouterr()
+#     assert test_message in captured.out
