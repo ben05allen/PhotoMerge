@@ -1,6 +1,6 @@
 import pytest
 from pathlib import Path
-from app.main import initialize_paths  # Replace with the actual module name
+from app.main import initialize_paths
 
 
 def test_initialize_paths_success(mocker):
