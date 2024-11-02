@@ -54,7 +54,7 @@ def test_add_console_handler_adds_stream_handler(temp_log_file):
     logger = setup_logging(temp_log_file)
 
     # Add console handler and verify it's added
-    logger = add_console_handler(logger)
+    add_console_handler(logger)
 
     # Ensure there are two handlers: FileHandler and StreamHandler
     assert len(logger.handlers) == 2
@@ -65,8 +65,8 @@ def test_add_console_handler_adds_stream_handler(temp_log_file):
 def test_add_console_handler_does_not_add_duplicate_stream_handler(temp_log_file):
     # Initialize logger and add console handler twice to test for duplicates
     logger = setup_logging(temp_log_file)
-    logger = add_console_handler(logger)
-    logger = add_console_handler(logger)
+    add_console_handler(logger)
+    add_console_handler(logger)
 
     # Ensure only one StreamHandler is present
     stream_handlers = [

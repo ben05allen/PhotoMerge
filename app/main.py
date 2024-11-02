@@ -55,36 +55,48 @@ def get_config(cli_path: str | None) -> dict | None:
         return None
 
 
-def main(args: argparse.ArgumentParser):
-    config = get_config(args.config)
-    allowed_extensions = config["extensions"]["allowed"]
-    LOGGER.info(f"Allowed extensions: {allowed_extensions}")
-    ignored_files = set(config["files"]["ignored"])
-    LOGGER.info(f"Ignored files: {ignored_files}")
+def initialize_paths(source: str, target: str) -> tuple[Path, Path]:
+    source_dir = Path(source)
+    if not source_dir.exists():
+        LOGGER.error(f"Source directory does not exist: {source_dir}")
+        raise FileNotFoundError(f"Source directory does not exist: {source_dir}")
 
-    data_dir = Path(args.source)
-    LOGGER.info(f"Using source directory: {data_dir}")
-    out_dir = Path(args.target)
-    LOGGER.info(f"Using target directory: {out_dir}")
+    target_dir = Path(target)
+    if not target_dir.exists():
+        LOGGER.error(f"Target directory does not exist: {target_dir}")
+        raise FileNotFoundError(f"Target directory does not exist: {target_dir}")
 
-    # hash files, store hashes and file names in sets
+    return source_dir, target_dir
+
+
+def initialize_hashes(out_dir: Path) -> tuple[set, set]:
     hashes = set()
     filenames = set()
 
-    # check out_dir for any files
-    for file in find_files_with_extensions(
-        out_dir, allowed_extensions, is_recursive=False
-    ):
+    for file in find_files_with_extensions(out_dir, is_recursive=False):
         hashes.add(calculate_hash(file))
         filenames.add(file.name)
 
+    return hashes, filenames
+
+
+def process_files(
+    data_dir: Path,
+    out_dir: Path,
+    hashes: set[str],
+    filenames: set[str],
+    allowed_extensions: set[str],
+    ignored_files: set,
+    is_recursive: bool,
+):
     # process source files
     for file in find_files_with_extensions(
-        data_dir, allowed_extensions, is_recursive=args.non_recursive
+        data_dir, allowed_extensions, is_recursive=is_recursive
     ):
         if file.name in ignored_files:
             LOGGER.info(f"Ignoring file: {file.name}")
             continue
+
         file_hash = calculate_hash(file)
         if file_hash not in hashes:
             LOGGER.info(f"New photo found: {file.name}")
@@ -110,9 +122,34 @@ def main(args: argparse.ArgumentParser):
                 LOGGER.info(f"Saved: {file.name} in {out_dir} as {new_name}")
 
 
+def main(args: argparse.ArgumentParser):
+    global LOGGER
+    if args.verbose:
+        add_console_handler(LOGGER)
+
+    config = get_config(args.config)
+    is_recursive = args.non_recursive
+    allowed_extensions = set(config["extensions"]["allowed"])
+    LOGGER.info(f"Allowed extensions: {allowed_extensions}")
+    ignored_files = set(config["files"]["ignored"])
+    LOGGER.info(f"Ignored files: {ignored_files}")
+
+    data_dir, out_dir = initialize_paths(args.source, args.target)
+
+    hashes, filenames = initialize_hashes(out_dir)
+
+    process_files(
+        data_dir=data_dir,
+        out_dir=out_dir,
+        hashes=hashes,
+        filenames=filenames,
+        allowed_extensions=allowed_extensions,
+        ignored_files=ignored_files,
+        is_recursive=is_recursive,
+    )
+
+
 if __name__ == "__main__":
     args = parse_args()
-    if args.verbose:
-        LOGGER = add_console_handler(LOGGER)
 
     main(args)

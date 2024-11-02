@@ -25,5 +25,3 @@ def add_console_handler(logger):
         console_formatter = logging.Formatter("%(message)s")
         console_handler.setFormatter(console_formatter)
         logger.addHandler(console_handler)
-
-    return logger
