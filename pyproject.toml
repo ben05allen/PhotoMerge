@@ -14,4 +14,5 @@ dev-dependencies = [
 ]
 
 [tool.pytest.ini_options]
-addopts = "--cov=app --cov-report=term-missing"
+pythonpath = "./app"
+addopts = "--cov --cov-report=term-missing"
