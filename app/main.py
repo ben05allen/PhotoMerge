@@ -2,17 +2,10 @@ import argparse
 from pathlib import Path
 import tomllib
 
-# hack to get around pytest imports
-try:
-    from app.copy_files import copy_file
-    from app.get_files import find_files_with_extensions
-    from app.hash_files import calculate_hash
-    from app.logger import setup_logging, add_console_handler
-except ImportError:
-    from copy_files import copy_file
-    from get_files import find_files_with_extensions
-    from hash_files import calculate_hash
-    from logger import setup_logging, add_console_handler
+from copy_files import copy_file
+from get_files import find_files_with_extensions
+from hash_files import calculate_hash
+from logger import setup_logging, add_console_handler
 
 
 DEFAULT_CONFIG = Path(__file__).parent / "config" / "config.toml"
