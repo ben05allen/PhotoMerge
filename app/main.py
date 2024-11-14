@@ -1,6 +1,7 @@
 import argparse
 from pathlib import Path
 import tomllib
+from typing import Iterable
 
 from copy_files import copy_file
 from get_files import find_files_with_extensions
@@ -62,11 +63,11 @@ def initialize_paths(source: str, target: str) -> tuple[Path, Path]:
     return source_dir, target_dir
 
 
-def initialize_hashes(out_dir: Path) -> tuple[set, set]:
+def initialize_hashes(extensions: Iterable, out_dir: Path) -> tuple[set, set]:
     hashes = set()
     filenames = set()
 
-    for file in find_files_with_extensions(out_dir, is_recursive=False):
+    for file in find_files_with_extensions(out_dir, extensions, is_recursive=False):
         hashes.add(calculate_hash(file))
         filenames.add(file.name)
 
@@ -129,7 +130,7 @@ def main(args: argparse.ArgumentParser):
 
     data_dir, out_dir = initialize_paths(args.source, args.target)
 
-    hashes, filenames = initialize_hashes(out_dir)
+    hashes, filenames = initialize_hashes(allowed_extensions, out_dir)
 
     process_files(
         data_dir=data_dir,
