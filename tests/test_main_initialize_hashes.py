@@ -19,12 +19,14 @@ def test_initialize_hashes_success(mocker):
     )
 
     # Call the function
-    hashes, filenames = initialize_hashes(Path("out_dir"))
+    hashes, filenames = initialize_hashes({".png", ".jpg"}, Path("out_dir"))
 
     # Assertions
     assert hashes == {"hash1", "hash2", "hash3"}
     assert filenames == {"file1.jpg", "file2.jpg", "file3.png"}
-    mock_find_files.assert_called_once_with(Path("out_dir"), is_recursive=False)
+    mock_find_files.assert_called_once_with(
+        Path("out_dir"), {".png", ".jpg"}, is_recursive=False
+    )
     assert mock_calculate_hash.call_count == 3
 
 
@@ -35,9 +37,11 @@ def test_initialize_hashes_empty_directory(mocker):
     )
 
     # Call the function
-    hashes, filenames = initialize_hashes(Path("out_dir"))
+    hashes, filenames = initialize_hashes({".png", ".jpg"}, Path("out_dir"))
 
     # Assertions
     assert hashes == set()
     assert filenames == set()
-    mock_find_files.assert_called_once_with(Path("out_dir"), is_recursive=False)
+    mock_find_files.assert_called_once_with(
+        Path("out_dir"), {".png", ".jpg"}, is_recursive=False
+    )
