@@ -1,4 +1,7 @@
 {
+  // python settings
+  "python.analysis.extraPaths": ["${workspaceFolder}/app"],
+  //pytest settings
   "python.testing.pytestArgs": ["app"],
   "python.testing.unittestEnabled": false,
   "python.testing.pytestEnabled": true

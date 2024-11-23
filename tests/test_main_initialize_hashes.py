@@ -1,11 +1,11 @@
 from pathlib import Path
-from app.main import initialize_hashes
+from main import initialize_hashes
 
 
 def test_initialize_hashes_success(mocker):
     # Mock find_files_with_extensions to simulate files in the directory
     mock_find_files = mocker.patch(
-        "app.main.find_files_with_extensions",
+        "main.find_files_with_extensions",
         return_value=[
             Path("file1.jpg"),
             Path("file2.jpg"),
@@ -15,7 +15,7 @@ def test_initialize_hashes_success(mocker):
 
     # Mock calculate_hash to return a unique hash for each file
     mock_calculate_hash = mocker.patch(
-        "app.main.calculate_hash", side_effect=["hash1", "hash2", "hash3"]
+        "main.calculate_hash", side_effect=["hash1", "hash2", "hash3"]
     )
 
     # Call the function
@@ -32,9 +32,7 @@ def test_initialize_hashes_success(mocker):
 
 def test_initialize_hashes_empty_directory(mocker):
     # Mock find_files_with_extensions to return an empty list, simulating an empty directory
-    mock_find_files = mocker.patch(
-        "app.main.find_files_with_extensions", return_value=[]
-    )
+    mock_find_files = mocker.patch("main.find_files_with_extensions", return_value=[])
 
     # Call the function
     hashes, filenames = initialize_hashes({".png", ".jpg"}, Path("out_dir"))

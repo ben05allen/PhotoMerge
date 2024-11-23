@@ -1,6 +1,6 @@
 import pytest
 import logging
-from app.logger import setup_logging, add_console_handler
+from logger import setup_logging, add_console_handler
 
 
 @pytest.fixture

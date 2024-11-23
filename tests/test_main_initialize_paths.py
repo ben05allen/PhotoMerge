@@ -1,6 +1,6 @@
 import pytest
 from pathlib import Path
-from app.main import initialize_paths
+from main import initialize_paths
 
 
 def test_initialize_paths_success(mocker):
@@ -19,7 +19,7 @@ def test_initialize_paths_success(mocker):
 def test_initialize_paths_source_missing(mocker):
     # Mock Path.exists to simulate source does not exist, but target does
     mock_exists = mocker.patch("pathlib.Path.exists", side_effect=[False, True])  # noqa: F841
-    mock_logger = mocker.patch("app.main.LOGGER")  # Mock the logger
+    mock_logger = mocker.patch("main.LOGGER")  # Mock the logger
 
     # Test for FileNotFoundError when source is missing
     with pytest.raises(
@@ -36,7 +36,7 @@ def test_initialize_paths_source_missing(mocker):
 def test_initialize_paths_target_missing(mocker):
     # Mock Path.exists to simulate source exists but target does not
     mock_exists = mocker.patch("pathlib.Path.exists", side_effect=[True, False])  # noqa: F841
-    mock_logger = mocker.patch("app.main.LOGGER")  # Mock the logger
+    mock_logger = mocker.patch("main.LOGGER")  # Mock the logger
 
     # Test for FileNotFoundError when target is missing
     with pytest.raises(

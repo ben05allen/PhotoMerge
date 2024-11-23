@@ -1,6 +1,6 @@
 import pytest
 from unittest.mock import MagicMock
-from app.main import main
+from main import main
 import argparse
 
 
@@ -27,22 +27,22 @@ def args():
 
 def test_main_success(args, mocker):
     # Mock dependencies
-    mock_logger = mocker.patch("app.main.LOGGER")
-    mock_add_console_handler = mocker.patch("app.main.add_console_handler")
+    mock_logger = mocker.patch("main.LOGGER")
+    mock_add_console_handler = mocker.patch("main.add_console_handler")
     mock_get_config = mocker.patch(
-        "app.main.get_config",
+        "main.get_config",
         return_value={
             "extensions": {"allowed": [".jpg", ".png"]},
             "files": {"ignored": ["ignored_file.jpg"]},
         },
     )
     mock_initialize_paths = mocker.patch(
-        "app.main.initialize_paths", return_value=(MagicMock(), MagicMock())
+        "main.initialize_paths", return_value=(MagicMock(), MagicMock())
     )
     mock_initialize_hashes = mocker.patch(
-        "app.main.initialize_hashes", return_value=(set(), set())
+        "main.initialize_hashes", return_value=(set(), set())
     )
-    mock_process_files = mocker.patch("app.main.process_files")
+    mock_process_files = mocker.patch("main.process_files")
 
     # Run main
     main(args)
@@ -58,7 +58,8 @@ def test_main_success(args, mocker):
 
     # Verify that initialize_hashes is called with the output directory path
     out_dir = mock_initialize_paths.return_value[1]
-    # mock_initialize_hashes.assert_called_once_with(out_dir)
+    extensions = {".jpg", ".png"}
+    mock_initialize_hashes.assert_called_once_with(extensions, out_dir)
 
     # Verify process_files is called with the correct arguments
     mock_process_files.assert_called_once_with(
@@ -73,4 +74,4 @@ def test_main_success(args, mocker):
 
     # Check if logger info messages were called with expected values
     # mock_logger.info.assert_any_call("Allowed extensions: {'.jpg', '.png'}")
-    # mock_logger.info.assert_any_call("Ignored files: {'ignored_file.jpg'}")
+    mock_logger.info.assert_any_call("Ignored files: {'ignored_file.jpg'}")

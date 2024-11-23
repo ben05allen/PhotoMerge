@@ -1,13 +1,13 @@
 from pathlib import Path
-from app.main import process_files
+from main import process_files
 
 
 # def test_process_files_ignores_file_in_ignored_files(mocker):
-#     mock_logger = mocker.patch("app.main.LOGGER")
+#     mock_logger = mocker.patch("main.LOGGER")
 #     mock_find_files = mocker.patch(  # noqa: F841
-#         "app.main.find_files_with_extensions", return_value=[Path("ignored_file.jpg")]
+#         "main.find_files_with_extensions", return_value=[Path("ignored_file.jpg")]
 #     )
-#     mock_calculate_hash = mocker.patch("app.main.calculate_hash")
+#     mock_calculate_hash = mocker.patch("main.calculate_hash")
 
 #     process_files(
 #         data_dir=Path("data_dir"),
@@ -25,12 +25,12 @@ from app.main import process_files
 
 
 def test_process_files_new_file_copied_successfully(mocker):
-    mock_logger = mocker.patch("app.main.LOGGER")
+    mock_logger = mocker.patch("main.LOGGER")
     mock_find_files = mocker.patch(  # noqa: F841
-        "app.main.find_files_with_extensions", return_value=[Path("new_file.jpg")]
+        "main.find_files_with_extensions", return_value=[Path("new_file.jpg")]
     )
-    mock_calculate_hash = mocker.patch("app.main.calculate_hash", return_value="hash1")  # noqa: F841
-    mock_copy_file = mocker.patch("app.main.copy_file", return_value=True)
+    mock_calculate_hash = mocker.patch("main.calculate_hash", return_value="hash1")  # noqa: F841
+    mock_copy_file = mocker.patch("main.copy_file", return_value=True)
 
     hashes = set()
     filenames = set()
@@ -53,14 +53,14 @@ def test_process_files_new_file_copied_successfully(mocker):
 
 
 def test_process_files_copy_failure(mocker):
-    mock_logger = mocker.patch("app.main.LOGGER")
+    mock_logger = mocker.patch("main.LOGGER")
     mock_find_files = mocker.patch(  # noqa: F841
-        "app.main.find_files_with_extensions", return_value=[Path("file_fail.jpg")]
+        "main.find_files_with_extensions", return_value=[Path("file_fail.jpg")]
     )
     mock_calculate_hash = mocker.patch(  # noqa: F841
-        "app.main.calculate_hash", return_value="hash_fail"
+        "main.calculate_hash", return_value="hash_fail"
     )
-    mock_copy_file = mocker.patch("app.main.copy_file", return_value=False)  # noqa: F841
+    mock_copy_file = mocker.patch("main.copy_file", return_value=False)  # noqa: F841
 
     process_files(
         data_dir=Path("data_dir"),
@@ -77,15 +77,15 @@ def test_process_files_copy_failure(mocker):
 
 
 # def test_process_files_duplicate_file_name(mocker):
-#     mock_logger = mocker.patch("app.main.LOGGER")
+#     mock_logger = mocker.patch("main.LOGGER")
 #     mock_find_files = mocker.patch(  # noqa: F841
-#         "app.main.find_files_with_extensions", return_value=[Path("duplicate_file.jpg")]
+#         "main.find_files_with_extensions", return_value=[Path("duplicate_file.jpg")]
 #     )
 #     mock_calculate_hash = mocker.patch(  # noqa: F841
-#         "app.main.calculate_hash", return_value="duplicate_hash"
+#         "main.calculate_hash", return_value="duplicate_hash"
 #     )
 #     mock_copy_file = mocker.patch(
-#         "app.main.copy_file", side_effect=[False, True]
+#         "main.copy_file", side_effect=[False, True]
 #     )  # First copy fails
 
 #     # Mock existence check to simulate duplicate file names
@@ -114,9 +114,7 @@ def test_process_files_copy_failure(mocker):
 
 
 def test_process_files_respects_is_recursive(mocker):
-    mock_find_files = mocker.patch(
-        "app.main.find_files_with_extensions", return_value=[]
-    )
+    mock_find_files = mocker.patch("main.find_files_with_extensions", return_value=[])
     process_files(
         data_dir=Path("data_dir"),
         out_dir=Path("out_dir"),
