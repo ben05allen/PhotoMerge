@@ -6,13 +6,19 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = []
 
-[tool.uv]
-dev-dependencies = [
+[project.scripts]
+photomerge = "photomerge:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
     "pytest-cov>=5.0.0",
     "pytest-mock>=3.14.0",
     "pytest>=8.3.3",
 ]
 
 [tool.pytest.ini_options]
-pythonpath = "app"
 addopts = "--cov --cov-report=term-missing"

@@ -21,7 +21,7 @@ uv sync
 ## Usage
 
 ```[bash]
-uv run app/main.py [-h] --source SOURCE --target TARGET [--verbose] [--config CONFIG]
+uv run photomerge [-h] --source SOURCE --target TARGET [--verbose] [--config CONFIG]
 
 Process source, target, and config arguments.
 

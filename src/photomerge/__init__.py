@@ -1,12 +1,15 @@
+# pyright: basic
+
+
 import argparse
 from pathlib import Path
 import tomllib
-from typing import Iterable
+from collections.abc import Iterable
 
-from copy_files import copy_file
-from get_files import find_files_with_extensions
-from hash_files import calculate_hash
-from logger import setup_logging, add_console_handler
+from .copy_files import copy_file
+from .get_files import find_files_with_extensions
+from .hash_files import calculate_hash
+from .logger import setup_logging, add_console_handler
 
 
 DEFAULT_CONFIG = Path(__file__).parent / "config" / "config.toml"
@@ -29,10 +32,10 @@ def parse_args() -> argparse.ArgumentParser:
     )
     parser.add_argument("--config", "-c", help="Configuration file path")
 
-    return parser.parse_args()
+    return parser
 
 
-def get_config(cli_path: str | None) -> dict | None:
+def get_config(cli_path: str | None) -> dict:
     if cli_path:
         config_path = Path(cli_path)
         LOGGER.info(f"Using custom config file: {config_path}")
@@ -46,7 +49,7 @@ def get_config(cli_path: str | None) -> dict | None:
         return config
     except FileNotFoundError:
         LOGGER.error(f"Config file not found: {config_path}")
-        return None
+        raise
 
 
 def initialize_paths(source: str, target: str) -> tuple[Path, Path]:
@@ -116,8 +119,10 @@ def process_files(
                 LOGGER.info(f"Saved: {file.name} in {out_dir} as {new_name}")
 
 
-def main(args: argparse.ArgumentParser):
+def main():
     global LOGGER
+
+    args = parse_args().parse_args()
     if args.verbose:
         add_console_handler(LOGGER)
 
@@ -141,9 +146,3 @@ def main(args: argparse.ArgumentParser):
         ignored_files=ignored_files,
         is_recursive=is_recursive,
     )
-
-
-if __name__ == "__main__":  # pragma: no cover
-    args = parse_args()
-
-    main(args)

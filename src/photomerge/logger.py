@@ -2,7 +2,7 @@ import logging
 import sys
 
 
-def setup_logging(log_file):
+def setup_logging(log_file: str):
     logger = logging.getLogger(__name__)
     logger.setLevel(logging.DEBUG)
 
@@ -17,7 +17,7 @@ def setup_logging(log_file):
     return logger
 
 
-def add_console_handler(logger):
+def add_console_handler(logger: logging.Logger):
     # add stdio handler if not already instantiated
     if not any(h.__class__.__name__ == "StreamHandler" for h in logger.handlers):
         console_handler = logging.StreamHandler(sys.stdout)

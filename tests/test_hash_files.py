@@ -1,7 +1,11 @@
-import pytest
-from hash_files import calculate_hash
-from unittest.mock import mock_open, patch
+# pyright: basic
+
+
 import hashlib
+import pytest
+from unittest.mock import mock_open, patch
+
+from photomerge.hash_files import calculate_hash
 
 
 def test_calculate_hash_success(mocker):
@@ -11,7 +15,7 @@ def test_calculate_hash_success(mocker):
 
     # Patch 'open' and simulate reading from a file
     mock_open_file = mock_open(read_data=mock_data)
-    with patch("hash_files.open", mock_open_file):
+    with patch("photomerge.hash_files.open", mock_open_file):
         result = calculate_hash("dummy_file.txt")
 
     # Verify that the result is the expected hash
@@ -21,7 +25,9 @@ def test_calculate_hash_success(mocker):
 
 def test_calculate_hash_file_not_found(mocker):
     # Patch 'open' to raise a FileNotFoundError
-    mock_open_file = mocker.patch("hash_files.open", side_effect=FileNotFoundError)
+    mock_open_file = mocker.patch(
+        "photomerge.hash_files.open", side_effect=FileNotFoundError
+    )
 
     with pytest.raises(FileNotFoundError):
         calculate_hash("nonexistent_file.txt")
@@ -36,7 +42,7 @@ def test_calculate_hash_empty_file(mocker):
     expected_hash = hashlib.md5(mock_data).hexdigest()
 
     mock_open_file = mock_open(read_data=mock_data)
-    with patch("hash_files.open", mock_open_file):
+    with patch("photomerge.hash_files.open", mock_open_file):
         result = calculate_hash("empty_file.txt")
 
     # Verify that the result is the hash for an empty string

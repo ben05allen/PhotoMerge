@@ -1,6 +1,10 @@
+# pyright: basic
+
+
 import pytest
 import logging
-from logger import setup_logging, add_console_handler
+
+from photomerge.logger import setup_logging, add_console_handler
 
 
 @pytest.fixture

@@ -1,5 +1,5 @@
+from collections.abc import Generator, Iterable
 from pathlib import Path
-from typing import Generator, Iterable
 
 
 def find_files_with_extensions(

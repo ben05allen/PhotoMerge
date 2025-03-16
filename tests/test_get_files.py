@@ -1,10 +1,13 @@
+# pyright: basic
+
+
 from pathlib import Path
-from get_files import find_files_with_extensions
+from photomerge.get_files import find_files_with_extensions  # pyright: ignore
 
 
 def test_find_files_with_extensions_recursive(mocker):
     # Mock rglob to simulate recursive search in the directory
-    mock_rglob = mocker.patch("get_files.Path.rglob")
+    mock_rglob = mocker.patch("photomerge.get_files.Path.rglob")
     mock_rglob.return_value = [
         Path("folder/file1.txt"),
         Path("folder/subfolder/file2.txt"),
@@ -23,7 +26,7 @@ def test_find_files_with_extensions_recursive(mocker):
 
 def test_find_files_with_extensions_non_recursive(mocker):
     # Mock iterdir to simulate non-recursive search in the directory
-    mock_iterdir = mocker.patch("get_files.Path.iterdir")
+    mock_iterdir = mocker.patch("photomerge.get_files.Path.iterdir")
     mock_iterdir.return_value = [
         Path("folder/file1.txt"),
         Path("folder/file2.md"),
@@ -40,7 +43,7 @@ def test_find_files_with_extensions_non_recursive(mocker):
 
 def test_find_files_with_extensions_non_recursive_no_match(mocker):
     # Mock iterdir to simulate non-recursive search with no matching files
-    mock_iterdir = mocker.patch("get_files.Path.iterdir")
+    mock_iterdir = mocker.patch("photomerge.get_files.Path.iterdir")
     mock_iterdir.return_value = [
         Path("folder/file1.md"),
         Path("folder/file2.pdf"),
@@ -55,7 +58,7 @@ def test_find_files_with_extensions_non_recursive_no_match(mocker):
 
 def test_find_files_with_extensions_recursive_no_match(mocker):
     # Mock rglob to simulate recursive search with no matching files
-    mock_rglob = mocker.patch("get_files.Path.rglob")
+    mock_rglob = mocker.patch("photomerge.get_files.Path.rglob")
     mock_rglob.return_value = [
         Path("folder/file1.md"),
         Path("folder/subfolder/file2.pdf"),
