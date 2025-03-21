@@ -3,12 +3,9 @@ from pathlib import Path
 
 
 def find_files_with_extensions(
-    folder_path: str | Path, extensions: Iterable[str], is_recursive: bool = True
+    folder_path: Path, extensions: Iterable[str], is_recursive: bool = True
 ) -> Generator[Path, None, None]:
     extensions = set(ext.lower() for ext in extensions)
-
-    if isinstance(folder_path, str):
-        folder_path = Path(folder_path)
 
     if is_recursive:
         folder_search = folder_path.rglob("*")

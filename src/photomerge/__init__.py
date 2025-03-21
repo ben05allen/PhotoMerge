@@ -35,9 +35,8 @@ def parse_args() -> argparse.ArgumentParser:
     return parser
 
 
-def get_config(cli_path: str | None) -> dict:
-    if cli_path:
-        config_path = Path(cli_path)
+def get_config(config_path: Path | None) -> dict:
+    if config_path:
         LOGGER.info(f"Using custom config file: {config_path}")
     else:
         config_path = DEFAULT_CONFIG
@@ -126,10 +125,22 @@ def main():
     if args.verbose:
         add_console_handler(LOGGER)
 
-    config = get_config(args.config)
+    if args.config:
+        try:
+            config_path = Path(args.config)
+        except FileNotFoundError:
+            LOGGER.error(f"Config file not found: {args.config}")
+            raise
+    else:
+        config_path = None
+
+    config = get_config(config_path)
+
     is_recursive = args.non_recursive
+
     allowed_extensions = set(config["extensions"]["allowed"])
     LOGGER.info(f"Allowed extensions: {allowed_extensions}")
+
     ignored_files = set(config["files"]["ignored"])
     LOGGER.info(f"Ignored files: {ignored_files}")
 

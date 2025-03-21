@@ -1,55 +1,54 @@
 # pyright: basic
 
-
 import logging
-from photomerge import get_config
-from unittest.mock import patch, mock_open
 from pathlib import Path
+import pytest
+from tempfile import NamedTemporaryFile
+from unittest.mock import patch
+
+from photomerge import get_config
 
 
-# Assuming DEFAULT_CONFIG and LOGGER are defined in main
-DEFAULT_CONFIG = Path("/path/to/default/config.toml")
+@pytest.fixture
+def config_file_path():
+    config_data = 'foo = "bar"'
+    with NamedTemporaryFile(delete=False, suffix=".toml") as temp_file:
+        temp_file.write(config_data.encode())
+        temp_file_path = Path(temp_file.name)
+    yield temp_file_path
+    temp_file_path.unlink()
 
 
-def test_get_config_with_custom_path(caplog, mocker):
+def test_get_config_with_custom_path(config_file_path, caplog):
     # Mock the file reading process with a sample config
-    mock_config_data = b'{"key": "value"}'
-    mock_open_file = mock_open(read_data=mock_config_data)
-    with patch("photomerge.open", mock_open_file), caplog.at_level(logging.INFO):
-        # Mock tomllib to simulate loading the configuration dictionary
-        mock_tomllib = mocker.patch(
-            "photomerge.tomllib.load", return_value={"key": "value"}
-        )
+    caplog.set_level(logging.INFO)
+    config = get_config(config_file_path)
 
-        config = get_config("custom/config.toml")
-
-        # Check that the correct path is used and log message is correct
-        assert config == {"key": "value"}
-        assert caplog.records[-1].message == (
-            "Using custom config file: custom/config.toml"
-        )
-        mock_tomllib.assert_called_once()
+    # Check that the correct path is used and log message is correct
+    assert config == {"foo": "bar"}
+    assert caplog.records[-1].message == (
+        f"Using custom config file: {str(config_file_path)}"
+    )
 
 
-def test_get_config_with_default_path(caplog, mocker):
+def test_get_config_with_default_path(config_file_path, caplog):
     # Mock the file reading process with a sample config
-    mock_config_data = b'{"key": "default_value"}'
-    mock_open_file = mock_open(read_data=mock_config_data)
-    with patch("photomerge.open", mock_open_file), caplog.at_level(logging.INFO):
-        # Mock tomllib to simulate loading the configuration dictionary
-        mock_tomllib = mocker.patch(
-            "photomerge.tomllib.load", return_value={"key": "default_value"}
-        )
-
+    with patch("photomerge.DEFAULT_CONFIG", config_file_path):
+        caplog.set_level(logging.INFO)
         config = get_config(None)
 
-        # Check that the default config path is used and log message is correct
-        assert config == {"key": "default_value"}
-        assert caplog.records[-1].message == "Using default config file"
-        mock_tomllib.assert_called_once()
+    # Check that the default config path is used and log message is correct
+    assert config == {"foo": "bar"}
+    assert caplog.records[-1].message == "Using default config file"
 
 
-# def test_get_config_file_not_found(caplog):
-#     # Patch open to raise FileNotFoundError
-#     with patch("photomerge.open", side_effect=FileNotFoundError):
-#         config = get_config("nonexistent/config.toml")
+def test_get_config_file_not_found(caplog):
+    # Patch open to raise FileNotFoundError
+
+    path_to_nonexistent_file = Path("nonexistent/config.toml")
+    with pytest.raises(FileNotFoundError):
+        _ = get_config(path_to_nonexistent_file)
+
+    assert caplog.records[-1].message == (
+        f"Config file not found: {str(path_to_nonexistent_file)}"
+    )
