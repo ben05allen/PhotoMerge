@@ -124,15 +124,15 @@ def main():
         add_console_handler(LOGGER)
 
     if args.config:
-        try:
-            config_path = Path(args.config)
-        except FileNotFoundError:
-            LOGGER.error(f"Config file not found: {args.config}")
-            raise
+        config_path = Path(args.config)
     else:
         config_path = None
 
-    config = get_config(config_path)
+    try:
+        config = get_config(config_path)
+    except FileNotFoundError:
+        LOGGER.error(f"Config file not found: {args.config}")
+        raise
 
     is_recursive = args.non_recursive
 
