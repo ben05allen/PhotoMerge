@@ -17,7 +17,7 @@ LOG_FILE = Path(__file__).parent / "logs" / "app.log"
 LOGGER = setup_logging(LOG_FILE)
 
 
-def parse_args() -> argparse.ArgumentParser:
+def app_arg_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description="Process source, target, verbosity, recursive search and config arguments."
     )
@@ -113,15 +113,13 @@ def process_files(
             filenames.add(new_name)
             suceeded = copy_file(file, out_dir / new_name)
             if not suceeded:
-                LOGGER.error(f"Failed to copy file: {file.name}")
+                LOGGER.error(f"Failed to copy duplicate file: {file.name}")
             else:
                 LOGGER.info(f"Saved: {file.name} in {out_dir} as {new_name}")
 
 
 def main():
-    global LOGGER
-
-    args = parse_args().parse_args()
+    args = app_arg_parser().parse_args()
     if args.verbose:
         add_console_handler(LOGGER)
 

@@ -3,7 +3,7 @@
 
 import argparse
 import pytest
-from unittest.mock import MagicMock
+from unittest.mock import patch
 
 from photomerge import main
 

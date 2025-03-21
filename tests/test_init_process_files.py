@@ -2,75 +2,122 @@
 
 
 from pathlib import Path
+import pytest
+import tempfile
 
 from photomerge import process_files
 
 
-# def test_process_files_ignores_file_in_ignored_files(mocker):
-#     mock_logger = mocker.patch("photomerge.LOGGER")
-#     mock_find_files = mocker.patch(  # noqa: F841
-#         "photomerge.find_files_with_extensions", return_value=[Path("ignored_file.jpg")]
-#     )
-#     mock_calculate_hash = mocker.patch("photomerge.calculate_hash")
+@pytest.fixture
+def source_dir():
+    temp_src_dir = tempfile.TemporaryDirectory(delete=False)
 
-#     process_files(
-#         data_dir=Path("data_dir"),
-#         out_dir=Path("out_dir"),
-#         hashes=set(),
-#         filenames=set(),
-#         allowed_extensions={".jpg", ".png"},
-#         ignored_files={"ignored_file.jpg"},
-#         is_recursive=True,
-#     )
+    (Path(temp_src_dir.name) / "folder1").mkdir(exist_ok=True)
+    (Path(temp_src_dir.name) / "folder2").mkdir(exist_ok=True)
 
-#     # Assert that ignored file is logged as ignored and not processed
-#     mock_logger.info.assert_any_call("Ignoring file: ignored_file.jpg")
-#     mock_calculate_hash.assert_not_called()
+    for file_name in [
+        "file1.jpg",
+        "folder1/file1.jpg",
+        "folder1/file2.png",
+        "folder1/file3.jpg",
+        "folder1/file4.txt",
+        "folder2/file1.jpg",
+    ]:
+        file = Path(temp_src_dir.name) / file_name
+        file.write_bytes(file_name.encode())
+
+    yield Path(temp_src_dir.name)
+
+    temp_src_dir.cleanup()
 
 
-def test_process_files_new_file_copied_successfully(mocker):
-    mock_logger = mocker.patch("photomerge.LOGGER")
-    mock_find_files = mocker.patch(  # noqa: F841
-        "photomerge.find_files_with_extensions", return_value=[Path("new_file.jpg")]
-    )
-    mock_calculate_hash = mocker.patch(
-        "photomerge.calculate_hash", return_value="hash1"
-    )  # noqa: F841
-    mock_copy_file = mocker.patch("photomerge.copy_file", return_value=True)
+@pytest.fixture
+def bad_source_dir():
+    temp_src_dir = tempfile.TemporaryDirectory(delete=False)
 
-    hashes = set()
-    filenames = set()
+    (Path(temp_src_dir.name) / "folder1").mkdir(exist_ok=True)
+
+    for file_name in ["bad_file1.jpg", "bad_file2.jpg", "folder1/bad_file1.jpg"]:
+        file = Path(temp_src_dir.name) / file_name
+        file.write_bytes(file_name.encode())
+
+    yield Path(temp_src_dir.name)
+
+    temp_src_dir.cleanup()
+
+
+@pytest.fixture
+def target_dir():
+    temp_tgt_dir = tempfile.TemporaryDirectory()
+
+    yield Path(temp_tgt_dir.name)
+
+    temp_tgt_dir.cleanup()
+
+
+def test_process_files_ignores_file_in_ignored_files(source_dir, target_dir, caplog):
+    caplog.set_level(10)  # Set log level to INFO
+    ignored_files = {"file1.jpg"}
     process_files(
-        data_dir=Path("data_dir"),
-        out_dir=Path("out_dir"),
-        hashes=hashes,
-        filenames=filenames,
+        data_dir=source_dir,
+        out_dir=target_dir,
+        hashes=set(),
+        filenames=set(),
         allowed_extensions={".jpg", ".png"},
+        ignored_files=ignored_files,
+        is_recursive=True,
+    )
+
+    # Check that the file was ignored
+    should_not_exist = target_dir / "file1.jpg"
+    assert not should_not_exist.exists()
+    assert "Ignoring file: file1.jpg" in caplog.text
+    assert "New photo found: file1.jpg" not in caplog.text
+
+
+def test_process_files_new_file_copied_successfully(source_dir, target_dir, caplog):
+    caplog.set_level(10)  # Set log level to INFO
+    allowed_extensions = {".jpg", ".png"}
+
+    process_files(
+        data_dir=source_dir,
+        out_dir=target_dir,
+        hashes=set(),
+        filenames=set(),
+        allowed_extensions=allowed_extensions,
         ignored_files=set(),
         is_recursive=True,
     )
 
+    for p in [
+        "file1.jpg",
+        "file1_1.jpg",
+        "file2.png",
+        "file3.jpg",
+        "file4.txt",
+        "file1_2.jpg",
+    ]:
+        target_file = target_dir / p
+        if f".{p.lower().split('.')[-1]}" in allowed_extensions:
+            assert target_file.exists()
+        else:
+            assert not target_file.exists()
+
     # Check that the file was processed, copied, and logged
-    assert "hash1" in hashes
-    assert "new_file.jpg" in filenames
-    mock_copy_file.assert_called_once_with(Path("new_file.jpg"), Path("out_dir"))
-    mock_logger.info.assert_any_call("New photo found: new_file.jpg")
-    mock_logger.info.assert_any_call("Saved: new_file.jpg in out_dir")
+    assert "New photo found: file2.png" in caplog.text
+    assert "New photo found: file1.jpg" in caplog.text
+    assert f"Saved: file3.jpg in {target_dir}" in caplog.text
+    assert f"Saved: file1.jpg in {target_dir} as file1_1.jpg" in caplog.text
 
 
-def test_process_files_copy_failure(mocker):
-    mock_logger = mocker.patch("photomerge.LOGGER")
-    mock_find_files = mocker.patch(  # noqa: F841
-        "photomerge.find_files_with_extensions", return_value=[Path("file_fail.jpg")]
-    )
-    mock_calculate_hash = mocker.patch(  # noqa: F841
-        "photomerge.calculate_hash", return_value="hash_fail"
-    )
+def test_process_files_copy_failure(bad_source_dir, target_dir, mocker, caplog):
+    caplog.set_level(10)  # Set log level to INFO
+
     mock_copy_file = mocker.patch("photomerge.copy_file", return_value=False)  # noqa: F841
 
     process_files(
-        data_dir=Path("data_dir"),
-        out_dir=Path("out_dir"),
+        data_dir=bad_source_dir,
+        out_dir=target_dir,
         hashes=set(),
         filenames=set(),
         allowed_extensions={".jpg", ".png"},
@@ -79,61 +126,59 @@ def test_process_files_copy_failure(mocker):
     )
 
     # Check that the copy failure is logged
-    mock_logger.error.assert_any_call("Failed to copy file: file_fail.jpg")
+    assert "Failed to copy file: bad_file1.jpg" in caplog.text
+    assert "Failed to copy file: bad_file2.jpg" in caplog.text
+    assert "Failed to copy duplicate file: bad_file1.jpg" in caplog.text
+    assert f"Saved: bad_file1.jpg in {target_dir}" not in caplog.text
+    assert not (target_dir / "bad_file.jpg").exists()
 
 
-# def test_process_files_duplicate_file_name(mocker):
-#     mock_logger = mocker.patch("photomerge.LOGGER")
-#     mock_find_files = mocker.patch(  # noqa: F841
-#         "photomerge.find_files_with_extensions", return_value=[Path("duplicate_file.jpg")]
-#     )
-#     mock_calculate_hash = mocker.patch(  # noqa: F841
-#         "photomerge.calculate_hash", return_value="duplicate_hash"
-#     )
-#     mock_copy_file = mocker.patch(
-#         "photomerge.copy_file", side_effect=[False, True]
-#     )  # First copy fails
+def test_process_files_respects_is_not_recursive(source_dir, target_dir, caplog):
+    caplog.set_level(10)  # Set log level to INFO
+    allowed_extensions = {".jpg", ".png"}
 
-#     # Mock existence check to simulate duplicate file names
-#     mock_exists = mocker.patch("pathlib.Path.exists", side_effect=[True, False])  # noqa: F841
-
-#     filenames = {"duplicate_file.jpg"}
-#     process_files(
-#         data_dir=Path("data_dir"),
-#         out_dir=Path("out_dir"),
-#         hashes=set(),
-#         filenames=filenames,
-#         allowed_extensions={".jpg", ".png"},
-#         ignored_files=set(),
-#         is_recursive=True,
-#     )
-
-#     # Check that the file was copied with a new name
-#     new_name = "duplicate_file_1.jpg"
-#     mock_copy_file.assert_called_with(
-#         Path("duplicate_file.jpg"), Path("out_dir") / new_name
-#     )
-#     assert new_name in filenames
-#     mock_logger.info.assert_any_call(
-#         f"Saved: duplicate_file.jpg in out_dir as {new_name}"
-#     )
-
-
-def test_process_files_respects_is_recursive(mocker):
-    mock_find_files = mocker.patch(
-        "photomerge.find_files_with_extensions", return_value=[]
-    )
     process_files(
-        data_dir=Path("data_dir"),
-        out_dir=Path("out_dir"),
+        data_dir=source_dir,
+        out_dir=target_dir,
         hashes=set(),
         filenames=set(),
-        allowed_extensions={".jpg", ".png"},
+        allowed_extensions=allowed_extensions,
         ignored_files=set(),
         is_recursive=False,
     )
 
-    # Verify that `is_recursive` was passed correctly to `find_files_with_extensions`
-    mock_find_files.assert_called_once_with(
-        Path("data_dir"), {".jpg", ".png"}, is_recursive=False
+    # Check that only allowed files were processed, copied, and logged
+    for p in ["file2.png", "file3.jpg", "file4.txt", "file1_1.jpg"]:
+        target_file = target_dir / p
+        assert not target_file.exists()
+
+    assert "New photo found: file1.jpg" in caplog.text
+    assert "New photo found: file2.png" not in caplog.text
+    assert f"Saved: file3.jpg in {target_dir}" not in caplog.text
+    assert f"Saved: file1.jpg in {target_dir} as file1_1.jpg" not in caplog.text
+
+
+def test_process_files_respects_allowed_extensions(source_dir, target_dir, caplog):
+    caplog.set_level(10)  # Set log level to INFO
+    allowed_extensions = {".jpg"}
+
+    process_files(
+        data_dir=source_dir,
+        out_dir=target_dir,
+        hashes=set(),
+        filenames=set(),
+        allowed_extensions=allowed_extensions,
+        ignored_files=set(),
+        is_recursive=True,
     )
+
+    # Check that only allowed files were processed, copied, and logged
+    for p in ["file2.png", "file4.txt"]:
+        target_file = target_dir / p
+        assert not target_file.exists()
+
+    assert "New photo found: file1.jpg" in caplog.text
+    assert "New photo found: file2.png" not in caplog.text
+    assert f"Saved: file3.jpg in {target_dir}" in caplog.text
+    assert f"Saved: file4.txt in {target_dir}" not in caplog.text
+    assert f"Saved: file1.jpg in {target_dir} as file1_1.jpg" in caplog.text
