@@ -6,11 +6,14 @@ dist/
 wheels/
 *.egg-info
 
+
 # pytest generated files
+.pytest_cache/
 .coverage
 
 # Virtual environments
 .venv
+.python-version
 
 *.png
 *.jpg

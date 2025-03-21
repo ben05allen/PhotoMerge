@@ -1,14 +1,15 @@
 import logging
+from pathlib import Path
 import sys
 
 
-def setup_logging(log_file: str):
+def setup_logging(log_file: Path):
     logger = logging.getLogger(__name__)
     logger.setLevel(logging.DEBUG)
 
     # add file handler unless already instantiated
     if not any(h.__class__.__name__ == "FileHandler" for h in logger.handlers):
-        file_handler = logging.FileHandler(log_file)
+        file_handler = logging.FileHandler(str(log_file.resolve()))
         file_handler.setLevel(logging.DEBUG)
         file_formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
         file_handler.setFormatter(file_formatter)
