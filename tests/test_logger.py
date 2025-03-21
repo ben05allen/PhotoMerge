@@ -17,11 +17,21 @@ def temp_log_file(tmp_path):
 
 @pytest.fixture
 def isolated_logger():
-    # Create and yield a fresh logger, clearing its handlers after each test
-    logger = logging.getLogger(__name__)
-    logger.handlers = []  # Clear existing handlers
+    logger = logging.getLogger("photomerge.logger")
+    logger.handlers = []
+
     yield logger
-    logger.handlers = []  # Reset for next test
+
+    logger.handlers = []
+
+
+# @pytest.fixture
+# def isolated_logger():
+#     # Create and yield a fresh logger, clearing its handlers after each test
+#     logger = logging.getLogger(__name__)
+#     logger.handlers = []  # Clear existing handlers
+#     yield logger
+#     logger.handlers = []  # Reset for next test
 
 
 def test_setup_logging_adds_file_handler(temp_log_file, isolated_logger):

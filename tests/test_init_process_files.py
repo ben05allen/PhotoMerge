@@ -8,7 +8,7 @@ import tempfile
 from photomerge import process_files
 
 
-@pytest.fixture
+@pytest.fixture()
 def source_dir():
     temp_src_dir = tempfile.TemporaryDirectory(delete=False)
 
@@ -46,7 +46,7 @@ def bad_source_dir():
     temp_src_dir.cleanup()
 
 
-@pytest.fixture
+@pytest.fixture()
 def target_dir():
     temp_tgt_dir = tempfile.TemporaryDirectory()
 

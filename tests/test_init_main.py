@@ -1,81 +1,93 @@
 # pyright: basic
 
-
-import argparse
+import logging
+from pathlib import Path
 import pytest
+import tempfile
 from unittest.mock import patch
 
-from photomerge import main
+from photomerge import main as photomerge_main
 
 
 @pytest.fixture
-def args():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--source", "-s", required=True)
-    parser.add_argument("--target", "-t", required=True)
-    parser.add_argument("--config", "-c")
-    parser.add_argument("--verbose", "-v", action="store_true")
-    parser.add_argument("--non_recursive", "-n", action="store_false")
-    return parser.parse_args(
-        [
-            "--source",
-            "source_dir",
-            "--target",
-            "target_dir",
-            "--config",
-            "config_file.toml",
-            "--verbose",
-        ]
-    )
+def source_dir():
+    temp_src_dir = tempfile.TemporaryDirectory(delete=False)
+
+    (Path(temp_src_dir.name) / "folder1").mkdir(exist_ok=True)
+    (Path(temp_src_dir.name) / "folder2").mkdir(exist_ok=True)
+
+    for file_name in [
+        "file1.jpg",
+        "folder1/file1.jpg",
+        "folder1/file2.png",
+        "folder2/file1.jpg",
+    ]:
+        file = Path(temp_src_dir.name) / file_name
+        file.write_bytes(file_name.encode())
+
+    yield Path(temp_src_dir.name)
+
+    temp_src_dir.cleanup()
 
 
-# def test_main_success(args, mocker):
-#     # Mock dependencies
-#     mock_logger = mocker.patch("photomerge.LOGGER")
-#     mock_add_console_handler = mocker.patch("photomerge.add_console_handler")
-#     mock_get_config = mocker.patch(
-#         "photomerge.get_config",
-#         return_value={
-#             "extensions": {"allowed": [".jpg", ".png"]},
-#             "files": {"ignored": ["ignored_file.jpg"]},
-#         },
-#     )
-#     mock_initialize_paths = mocker.patch(
-#         "photomerge.initialize_paths", return_value=(MagicMock(), MagicMock())
-#     )
-#     mock_initialize_hashes = mocker.patch(
-#         "photomerge.initialize_hashes", return_value=(set(), set())
-#     )
-#     mock_process_files = mocker.patch("photomerge.process_files")
-#
-#     # Run main
-#     main()
-#
-#     # Verify that add_console_handler was called since verbose=True
-#     mock_add_console_handler.assert_called_once_with(mock_logger)
-#
-#     # Verify configuration is loaded correctly
-#     mock_get_config.assert_called_once_with("config_file.toml")
-#
-#     # Verify that initialize_paths is called with correct arguments
-#     mock_initialize_paths.assert_called_once_with("source_dir", "target_dir")
-#
-#     # Verify that initialize_hashes is called with the output directory path
-#     out_dir = mock_initialize_paths.return_value[1]
-#     extensions = {".jpg", ".png"}
-#     mock_initialize_hashes.assert_called_once_with(extensions, out_dir)
-#
-#     # Verify process_files is called with the correct arguments
-#     mock_process_files.assert_called_once_with(
-#         data_dir=mock_initialize_paths.return_value[0],
-#         out_dir=out_dir,
-#         hashes=set(),
-#         filenames=set(),
-#         allowed_extensions={".jpg", ".png"},
-#         ignored_files={"ignored_file.jpg"},
-#         is_recursive=True,
-#     )
-#
-#     # Check if logger info messages were called with expected values
-#     # mock_logger.info.assert_any_call("Allowed extensions: {'.jpg', '.png'}")
-#     mock_logger.info.assert_any_call("Ignored files: {'ignored_file.jpg'}")
+@pytest.fixture
+def target_dir():
+    temp_tgt_dir = tempfile.TemporaryDirectory()
+
+    yield Path(temp_tgt_dir.name)
+
+    temp_tgt_dir.cleanup()
+
+
+@pytest.fixture
+def custom_config():
+    temp_config_file = tempfile.NamedTemporaryFile(delete=False, suffix=".toml")
+
+    config_contents = """
+[extensions]
+    allowed = ['.png', '.jpg', '.jpeg', '.tiff', 'tif', '.bmp', '.webp', '.heif', '.heic']
+    
+[files]
+    ignored = ['ignore_me.png']
+"""
+    with open(temp_config_file.name, "w") as f:
+        f.write(config_contents)
+
+    yield Path(temp_config_file.name)
+
+    temp_config_file.close()
+
+
+def test_main_success(source_dir, target_dir):
+    test_args = f"prog --source {source_dir} --target {target_dir}".split()
+
+    with patch("sys.argv", test_args):
+        photomerge_main()
+        assert (Path(str(target_dir)) / "file1.jpg").exists()
+
+
+def test_main_verbose_success(source_dir, target_dir):
+    test_args = f"prog --source {source_dir} --target {target_dir} --verbose".split()
+
+    with patch("sys.argv", test_args):
+        photomerge_main()
+        assert (Path(str(target_dir)) / "file1.jpg").exists()
+
+
+def test_main_custom_config_success(source_dir, target_dir, custom_config):
+    test_args = f"prog --source {source_dir} --target {target_dir} --config {custom_config}".split()
+
+    with patch("sys.argv", test_args):
+        photomerge_main()
+        assert (Path(str(target_dir)) / "file1.jpg").exists()
+
+
+def test_main_config_failure(source_dir, target_dir, caplog):
+    test_args = f"prog --source {source_dir} --target {target_dir} --config path/that/doesnt/exist".split()
+
+    with patch("sys.argv", test_args):
+        with pytest.raises(FileNotFoundError):
+            photomerge_main()
+
+        assert "Config file not found: path/that/doesnt/exist" in caplog.text
+        assert not (Path(str(target_dir)) / "file1.jpg").exists()
