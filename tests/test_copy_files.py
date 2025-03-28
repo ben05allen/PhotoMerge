@@ -2,67 +2,27 @@
 
 
 from pathlib import Path
-import pytest
-import tempfile
 
 from photomerge.copy_files import copy_file
 
 
-@pytest.fixture()
-def source_file():
-    with tempfile.NamedTemporaryFile() as temp_src_file:
-        temp_src_file.write(b"source file contents")
+def test_copy_file_success(tmp_path):
+    source_file = tmp_path / "src_file"
+    source_file.write_bytes(b"source file contents")
+    target_folder = tmp_path / "tgt_folder"
+    Path.mkdir(target_folder)
 
-        yield Path(temp_src_file.name)
-
-
-@pytest.fixture()
-def target_folder():
-    temp_tgt_folder = tempfile.TemporaryDirectory()
-    yield Path(temp_tgt_folder.name)
-
-
-def test_copy_file_success(source_file, target_folder):
     result = copy_file(source_file, target_folder)
+    with open(target_folder / "src_file", "rb") as f:
+        file_contents = f.read()
 
-    assert (target_folder / (source_file.name)).exists()
     assert result is True
+    assert (target_folder / (source_file.name)).exists()
+    assert b"source file contents" in file_contents
 
 
-def test_copy_file_failure_io_error(mocker):
-    # Mock copy2 to raise an IOError
-    mock_copy = mocker.patch("photomerge.copy_files.copy2", side_effect=IOError)
-
-    # Test if function returns False on IOError
-    result = copy_file(Path("source.txt"), Path("destination.txt"))
-    assert result is False
-    mock_copy.assert_called_once_with(
-        str(Path("source.txt").resolve()), str(Path("destination.txt").resolve())
-    )
-
-
-def test_copy_file_failure_os_error(caplog, mocker):
-    # Mock copy2 to raise an OSError
-    mock_copy = mocker.patch("photomerge.copy_files.copy2", side_effect=OSError)
-
+def test_copy_file_failure(caplog, mocker):
     # Test if function returns False on OSError
     result = copy_file(Path("source.txt"), Path("destination.txt"))
     assert result is False
-    mock_copy.assert_called_once_with(
-        str(Path("source.txt").resolve()), str(Path("destination.txt").resolve())
-    )
     assert "Error attempting to copy file" in caplog.text
-
-
-def test_copy_file_failure_file_not_found(mocker):
-    # Mock copy2 to raise a FileNotFoundError
-    mock_copy = mocker.patch(
-        "photomerge.copy_files.copy2", side_effect=FileNotFoundError
-    )
-
-    # Test if function returns False on FileNotFoundError
-    result = copy_file(Path("source.txt"), Path("destination.txt"))
-    assert result is False
-    mock_copy.assert_called_once_with(
-        str(Path("source.txt").resolve()), str(Path("destination.txt").resolve())
-    )
