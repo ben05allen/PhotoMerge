@@ -2,7 +2,7 @@
 
 
 from pathlib import Path
-from photomerge.get_files import find_files_with_extensions  # pyright: ignore
+from photomerge.get_files import find_files_with_extensions
 
 
 def test_find_files_with_extensions_recursive(mocker):

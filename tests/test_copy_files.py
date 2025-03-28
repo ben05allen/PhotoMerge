@@ -21,7 +21,7 @@ def test_copy_file_success(tmp_path):
     assert b"source file contents" in file_contents
 
 
-def test_copy_file_failure(caplog, mocker):
+def test_copy_file_failure(caplog):
     # Test if function returns False on OSError
     result = copy_file(Path("source.txt"), Path("destination.txt"))
     assert result is False
