@@ -17,21 +17,13 @@ def temp_log_file(tmp_path):
 
 @pytest.fixture
 def isolated_logger():
+    # fixture to ensure that we start with no log hanglers
     logger = logging.getLogger("photomerge.logger")
     logger.handlers = []
 
     yield logger
 
     logger.handlers = []
-
-
-# @pytest.fixture
-# def isolated_logger():
-#     # Create and yield a fresh logger, clearing its handlers after each test
-#     logger = logging.getLogger(__name__)
-#     logger.handlers = []  # Clear existing handlers
-#     yield logger
-#     logger.handlers = []  # Reset for next test
 
 
 def test_setup_logging_adds_file_handler(temp_log_file, isolated_logger):
@@ -42,13 +34,6 @@ def test_setup_logging_adds_file_handler(temp_log_file, isolated_logger):
     assert len(logger.handlers) == 1
     assert logger.handlers[0].__class__.__name__ == "FileHandler"
     assert logger.handlers[0].level == logging.DEBUG
-
-    # # Log a message and confirm it's written to the temp file
-    # test_message = "Testing file handler"
-    # logger.debug(test_message)
-    # with open(temp_log_file, "r") as f:
-    #     log_content = f.read()
-    #     assert test_message in log_content
 
 
 def test_setup_logging_does_not_add_duplicate_file_handler(temp_log_file):
