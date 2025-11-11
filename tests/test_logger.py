@@ -1,6 +1,3 @@
-# pyright: basic
-
-
 import pytest
 import logging
 

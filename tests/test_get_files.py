@@ -1,6 +1,3 @@
-# pyright: basic
-
-
 from pathlib import Path
 from photomerge.get_files import find_files_with_extensions
 

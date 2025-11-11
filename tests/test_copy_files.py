@@ -1,6 +1,3 @@
-# pyright: basic
-
-
 from pathlib import Path
 
 from photomerge.copy_files import copy_file

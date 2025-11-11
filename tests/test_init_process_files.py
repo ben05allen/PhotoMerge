@@ -1,6 +1,3 @@
-# pyright: basic
-
-
 from pathlib import Path
 import pytest
 import tempfile
